@@ -1,19 +1,45 @@
 # =========================
-# CubaL Project (FINAL - WITH SQL VIEW MATCHING)
+# CubaL Project FINAL
 # =========================
 
 # Install:
-# pip install mysql-connector-python
+# pip install mysql-connector-python pandas numpy matplotlib
 
 import mysql.connector
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from collections import deque
 
 # -------------------------
-# CONNECT DATABASE
+# LOGIN SYSTEM
+# -------------------------
+print("===== LOGIN =====")
+username = input("Enter username: ")
+password = input("Enter password: ")
+
+if username == "admin" and password == "admin123":
+    role = "admin"
+    print("🔐 Logged in as ADMIN")
+elif username == "user" and password == "user123":
+    role = "user"
+    print("👤 Logged in as USER")
+else:
+    print("❌ Invalid login")
+    exit()
+
+# -------------------------
+# QUEUE
+# -------------------------
+request_queue = deque()
+
+# -------------------------
+# DATABASE CONNECTION
 # -------------------------
 conn = mysql.connector.connect(
     host="localhost",
     user="root",
-    password="teju123" , # 🔥 IMPORTANT: put your MySQL password here (empty if no password),  # change this
+    password="teju123",   # change if needed
     database="cubal"
 )
 
@@ -26,105 +52,142 @@ while True:
     print("\n===== CubaL Emergency System =====")
     print("1. Register Donor")
     print("2. Emergency Request")
-    print("3. View All Donors")
-    print("4. Search Donor by Blood Group")
+    print("3. View Donors")
+    print("4. Search Donor")
     print("5. Exit")
-    print("6. View Emergency Requests")
-    print("7. Match Donors by Location")
-    print("8. 🔥 Auto Match (Using SQL VIEW)")
+
+    if role == "admin":
+        print("6. View Requests")
+        print("7. Match Donors")
+        print("8. Auto Match (SQL VIEW)")
+        print("9. Data Analysis")
+        print("10. Process Queue")
+        print("11. Show Graph")
 
     choice = int(input("Enter choice: "))
 
-    # 1. REGISTER DONOR
+    # -------------------------
+    # 1 REGISTER DONOR
+    # -------------------------
     if choice == 1:
         name = input("Name: ")
-        blood = input("Blood Group: ")
+        blood = input("Blood Group: ").upper()
         location = input("Location: ")
         contact = input("Contact: ")
 
-        query = "INSERT INTO donors (name, blood_group, location, contact) VALUES (%s,%s,%s,%s)"
-        cursor.execute(query, (name, blood, location, contact))
+        cursor.execute(
+            "INSERT INTO donors (name, blood_group, location, contact) VALUES (%s,%s,%s,%s)",
+            (name, blood, location, contact)
+        )
         conn.commit()
+        print("✅ Donor Registered")
 
-        print("✅ Donor Registered Successfully")
-
-    # 2. EMERGENCY REQUEST
+    # -------------------------
+    # 2 EMERGENCY REQUEST
+    # -------------------------
     elif choice == 2:
         patient = input("Patient Name: ")
-        blood = input("Blood Group: ")
+        blood = input("Blood Group: ").upper()
         location = input("Location: ")
-        urgency = input("Urgency (High/Medium/Low): ")
+        urgency = input("Urgency: ")
 
-        query = "INSERT INTO requests (patient_name, blood_group, location, urgency) VALUES (%s,%s,%s,%s)"
-        cursor.execute(query, (patient, blood, location, urgency))
+        cursor.execute(
+            "INSERT INTO requests (patient_name, blood_group, location, urgency) VALUES (%s,%s,%s,%s)",
+            (patient, blood, location, urgency)
+        )
         conn.commit()
 
-        print("🚨 Emergency Request Added")
+        request_queue.append((patient, blood, location, urgency))
 
-    # 3. VIEW DONORS
+        print("🚨 Request Added")
+
+    # -------------------------
+    # 3 VIEW DONORS
+    # -------------------------
     elif choice == 3:
         cursor.execute("SELECT * FROM donors")
-        data = cursor.fetchall()
+        df = pd.DataFrame(cursor.fetchall(), columns=["ID","Name","Blood","Location","Contact"])
+        print(df)
 
-        print("\n--- Donor List ---")
-        for row in data:
-            print(f"ID:{row[0]} | Name:{row[1]} | Blood:{row[2]} | Location:{row[3]} | Contact:{row[4]}")
-
-    # 4. SEARCH DONOR
+    # -------------------------
+    # 4 SEARCH DONOR (FIXED)
+    # -------------------------
     elif choice == 4:
-        blood = input("Enter Blood Group: ")
+        blood = input("Enter Blood Group: ").upper()
 
-        cursor.execute("SELECT * FROM donors WHERE blood_group = %s", (blood,))
-        data = cursor.fetchall()
+        cursor.execute("SELECT * FROM donors")
+        df = pd.DataFrame(cursor.fetchall(), columns=["ID","Name","Blood","Location","Contact"])
 
-        if data:
-            print("\n--- Matching Donors ---")
-            for row in data:
-                print(f"Name:{row[1]} | Location:{row[3]} | Contact:{row[4]}")
+        result = df[df["Blood"].str.upper() == blood]
+
+        print("\n--- Search Result ---")
+        if result.empty:
+            print(f"❌ No donor found for {blood}")
         else:
-            print("❌ No donors found")
+            print(result)
 
-    # 5. EXIT
+    # -------------------------
+    # 5 EXIT
+    # -------------------------
     elif choice == 5:
-        print("Exiting CubaL...")
+        print("Exiting...")
         break
 
-    # 6. VIEW EMERGENCY REQUESTS
-    elif choice == 6:
+    # -------------------------
+    # ADMIN FEATURES
+    # -------------------------
+    elif role == "admin" and choice == 6:
         cursor.execute("SELECT * FROM requests")
-        data = cursor.fetchall()
+        df = pd.DataFrame(cursor.fetchall(), columns=["ID","Patient","Blood","Location","Urgency"])
+        print(df)
 
-        print("\n--- Emergency Requests ---")
-        for row in data:
-            print(f"Patient:{row[1]} | Blood:{row[2]} | Location:{row[3]} | Urgency:{row[4]}")
+    elif role == "admin" and choice == 7:
+        blood = input("Blood: ").upper()
+        location = input("Location: ")
 
-    # 7. MATCH DONORS BY LOCATION
-    elif choice == 7:
-        blood = input("Enter Blood Group: ")
-        location = input("Enter Location: ")
+        cursor.execute("SELECT * FROM donors")
+        df = pd.DataFrame(cursor.fetchall(), columns=["ID","Name","Blood","Location","Contact"])
 
-        query = "SELECT * FROM donors WHERE blood_group = %s AND location = %s"
-        cursor.execute(query, (blood, location))
-        data = cursor.fetchall()
+        result = df[(df["Blood"] == blood) & (df["Location"] == location)]
 
-        if data:
-            print("\n--- Matched Donors ---")
-            for row in data:
-                print(f"Name:{row[1]} | Location:{row[3]} | Contact:{row[4]}")
+        if result.empty:
+            print("❌ No match found")
         else:
-            print("❌ No matching donors found")
+            print(result)
 
-    # 8. 🔥 AUTO MATCH USING SQL VIEW
-    elif choice == 8:
+    elif role == "admin" and choice == 8:
         cursor.execute("SELECT * FROM donor_match")
-        data = cursor.fetchall()
+        df = pd.DataFrame(cursor.fetchall(), columns=["Donor","Blood","Location","Contact","Patient","Urgency"])
+        print(df)
 
-        print("\n🔥 --- AUTO MATCHED DONORS ---")
-        for row in data:
-            print(f"Donor:{row[0]} | Blood:{row[1]} | Location:{row[2]} | Contact:{row[3]} | Patient:{row[4]} | Urgency:{row[5]}")
+    elif role == "admin" and choice == 9:
+        cursor.execute("SELECT blood_group FROM donors")
+        arr = np.array([x[0] for x in cursor.fetchall()])
+        u, c = np.unique(arr, return_counts=True)
+
+        print("\n--- Blood Distribution ---")
+        for i, j in zip(u, c):
+            print(i, ":", j)
+
+    elif role == "admin" and choice == 10:
+        if request_queue:
+            print("Processing:", request_queue.popleft())
+        else:
+            print("Queue empty")
+
+    elif role == "admin" and choice == 11:
+        cursor.execute("SELECT blood_group FROM donors")
+        arr = np.array([x[0] for x in cursor.fetchall()])
+        u, c = np.unique(arr, return_counts=True)
+
+        plt.bar(u, c)
+        plt.xlabel("Blood Group")
+        plt.ylabel("Donors")
+        plt.title("Blood Distribution")
+        plt.show()
 
     else:
-        print("Invalid choice")
+        print("❌ Invalid choice")
 
-# CLOSE CONNECTION
+# CLOSE
 conn.close()
