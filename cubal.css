@@ -1,0 +1,107 @@
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: #0f172a;
+    color: white;
+}
+
+/* NAVBAR */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px 40px;
+    background: white;
+    color: black;
+    position: sticky;
+    top: 0;
+}
+
+.navbar a {
+    margin: 0 10px;
+    text-decoration: none;
+    color: black;
+}
+
+.emergency {
+    background: darkred;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 20px;
+    border: none;
+}
+
+/* HERO */
+.hero {
+    height: 90vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #020617, #0f172a);
+}
+
+.hero h1 {
+    font-size: 60px;
+}
+
+.hero span {
+    color: red;
+}
+
+.hero-btns button {
+    margin: 10px;
+    padding: 12px 20px;
+    border-radius: 10px;
+    border: none;
+    background: red;
+    color: white;
+}
+
+.hero-btns .outline {
+    background: transparent;
+    border: 2px solid red;
+}
+
+/* SECTION */
+.section {
+    display: flex;
+    justify-content: space-around;
+    padding: 60px;
+}
+
+/* FORM */
+.form {
+    background: white;
+    color: black;
+    padding: 30px;
+    border-radius: 15px;
+    display: flex;
+    flex-direction: column;
+    width: 300px;
+}
+
+.form input, .form textarea {
+    margin: 10px 0;
+    padding: 10px;
+}
+
+.form button {
+    background: red;
+    color: white;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+}
+
+/* REQUEST FULL WIDTH */
+.wide {
+    width: 500px;
+    margin: auto;
+}
+
+/* FOOTER */
+footer {
+    text-align: center;
+    padding: 20px;
+    background: black;
+}
